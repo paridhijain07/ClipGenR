@@ -20,7 +20,7 @@ Turn a single 60-minute long video or podcast into **10 high-converting, viral v
   - 4 built-in aesthetic presets: *Hormozi Viral*, *Beast Pop*, *Neon Cyber*, and *Clean Minimalist*.
 - **🇮🇳 Full Hindi & Hinglish Transliteration Engine**
   - Instant toggle between **Hinglish (English alphabet)** (e.g. *`HRITHIK JI AUR SHWETA AAP DONO KO SHADI...`*) and **Hindi (Devanagari)** (e.g. *`ऋतिक जी और श्वेता आप दोनों को शादी...`*).
-  - Built-in phoneme sanitizer prevents Urdu/Arabic script confusion on conversational Indian audio.
+
 - **🎛️ Interactive Real-Time 9:16 Studio Editor**
   - Live mobile phone bezel preview simulator with interactive video scrubbing.
   - Click-to-jump word transcript navigation.
