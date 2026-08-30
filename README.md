@@ -19,7 +19,7 @@ Turn a single 60-minute long video or podcast into **10 high-converting, viral v
   - Word-by-word active highlight pop animation in vibrant Gold, Cyan, Green, and Rose Red.
   - 4 built-in aesthetic presets: *Hormozi Viral*, *Beast Pop*, *Neon Cyber*, and *Clean Minimalist*.
 - **🇮🇳 Full Hindi & Hinglish Transliteration Engine**
-  - Instant toggle between **Hinglish (English alphabet)** (e.g. *`HRITHIK JI AUR SHWETA AAP DONO KO SHADI...`*) and **Hindi (Devanagari)** (e.g. *`ऋतिक जी और श्वेता आप दोनों को शादी...`*).
+  - Instant toggle between **Hinglish (English alphabet)** and **Hindi (Devanagari)**.
 
 - **🎛️ Interactive Real-Time 9:16 Studio Editor**
   - Live mobile phone bezel preview simulator with interactive video scrubbing.
