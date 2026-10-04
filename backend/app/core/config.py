@@ -1,6 +1,19 @@
 import os
+from pathlib import Path
 from typing import List, Optional, Union
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+
+# Load environment variables from .env file
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent.parent / ".env")
+
+# Ensure HuggingFace and PyTorch caches are stored in workspace directory with ample disk space
+_WORKSPACE_CACHE = Path(__file__).resolve().parent.parent.parent.parent / ".cache"
+_WORKSPACE_CACHE.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("HF_HOME", str(_WORKSPACE_CACHE / "huggingface"))
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(_WORKSPACE_CACHE / "huggingface" / "hub"))
+os.environ.setdefault("TORCH_HOME", str(_WORKSPACE_CACHE / "torch"))
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 
 class Settings(BaseModel):
@@ -54,6 +67,7 @@ class Settings(BaseModel):
     # AI Model Providers
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY")
     WHISPER_MODEL_SIZE: str = os.getenv("WHISPER_MODEL_SIZE", "base")
 
 

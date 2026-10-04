@@ -20,26 +20,49 @@ interface ClipEditorModalProps {
   onClose: () => void;
 }
 
-// Client-side quick Devanagari to Hinglish mapping for live preview
+// Client-side Devanagari to Romanized Hinglish mapping for live preview
 function toHinglishText(text: string): string {
-  const map: Record<string, string> = {
+  if (!text) return "";
+  
+  // Hindi vowel signs (Matras) & characters
+  const vowels: Record<string, string> = {
     "अ": "a", "आ": "aa", "इ": "i", "ई": "ee", "उ": "u", "ऊ": "oo", "ऋ": "ri",
     "ए": "e", "ऐ": "ai", "ओ": "o", "औ": "au", "अं": "an", "अः": "ah",
-    "क": "k", "ख": "kh", "ग": "g", "घ": "gh", "ङ": "ng",
-    "च": "ch", "छ": "chh", "ज": "j", "झ": "jh", "ञ": "ny",
-    "ट": "t", "ठ": "th", "ड": "d", "ढ": "dh", "ण": "n",
-    "त": "t", "थ": "th", "द": "d", "ध": "dh", "न": "n",
-    "प": "p", "फ": "ph", "ब": "b", "भ": "bh", "म": "m",
-    "य": "y", "र": "r", "ल": "l", "व": "v", "श": "sh", "ष": "sh", "स": "s", "ह": "h",
     "ा": "aa", "ि": "i", "ी": "ee", "ु": "u", "ू": "oo", "ृ": "ri",
     "े": "e", "ै": "ai", "ो": "o", "ौ": "au", "ं": "n", "ः": "h", "्": "",
-    "क़": "q", "ख़": "kh", "ग़": "gh", "ज़": "z", "ड़": "r", "ढ़": "rh", "फ़": "f"
+  };
+
+  const consonants: Record<string, string> = {
+    "क": "ka", "ख": "kha", "ग": "ga", "घ": "gha", "ङ": "nga",
+    "च": "cha", "छ": "chha", "ज": "ja", "झ": "jha", "ञ": "nya",
+    "ट": "ta", "ठ": "tha", "ड": "da", "ढ": "dha", "ण": "na",
+    "त": "ta", "थ": "tha", "द": "da", "ध": "dha", "न": "na",
+    "प": "pa", "फ": "pha", "ब": "ba", "भ": "bha", "म": "ma",
+    "य": "ya", "र": "ra", "ल": "la", "व": "va", "श": "sha", "ष": "sha", "स": "sa", "ह": "ha",
+    "क़": "qa", "ख़": "kha", "ग़": "gha", "ज़": "za", "ड़": "ra", "ढ़": "rha", "फ़": "fa",
   };
 
   let out = "";
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
-    out += map[char] !== undefined ? map[char] : char;
+    const nextChar = text[i + 1];
+
+    if (consonants[char]) {
+      let base = consonants[char];
+      if (nextChar === "्") {
+        out += base.slice(0, -1);
+        i++; // skip virama
+      } else if (nextChar && vowels[nextChar] !== undefined) {
+        out += base.slice(0, -1) + vowels[nextChar];
+        i++; // skip matra
+      } else {
+        out += (i === text.length - 1) ? base.slice(0, -1) : base;
+      }
+    } else if (vowels[char] !== undefined) {
+      out += vowels[char];
+    } else {
+      out += char;
+    }
   }
   return out;
 }
@@ -57,7 +80,7 @@ export const ClipEditorModal: React.FC<ClipEditorModalProps> = ({
   const [selectedPreset, setSelectedPreset] = useState<string>(
     clip?.captions?.preset_name || "hormozi_yellow"
   );
-  const [isHinglish, setIsHinglish] = useState(true);
+  const [isHinglish, setIsHinglish] = useState(false);
   
   // Custom caption overrides
   const [fontSize, setFontSize] = useState(clip?.captions?.font_size || 42);
@@ -76,6 +99,15 @@ export const ClipEditorModal: React.FC<ClipEditorModalProps> = ({
     if (!clip || !isOpen) return;
 
     let isMounted = true;
+    setIsPlaying(false);
+    setCurrentTime(clip.start_time);
+    setExportedItem(null);
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = clip.start_time;
+      videoRef.current.pause();
+    }
+
     fetchCaptionPresets().then((p) => {
       if (isMounted) setPresets(p);
     }).catch(() => {});
@@ -88,6 +120,46 @@ export const ClipEditorModal: React.FC<ClipEditorModalProps> = ({
       isMounted = false;
     };
   }, [clip, isOpen]);
+
+  // Stable phrase chunking (3 words per group)
+  const wordsPerGroup = 3;
+  const chunks = React.useMemo(() => {
+    const result: WordTimestamp[][] = [];
+    for (let i = 0; i < words.length; i += wordsPerGroup) {
+      result.push(words.slice(i, i + wordsPerGroup));
+    }
+    return result;
+  }, [words]);
+
+  // Find active stable chunk for current playback time
+  const activeChunk = React.useMemo(() => {
+    if (words.length === 0) return [];
+    
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const start = chunk[0].start_time;
+      const nextChunk = chunks[i + 1];
+      const end = nextChunk ? nextChunk[0].start_time : chunk[chunk.length - 1].end_time + 0.5;
+      
+      if (currentTime >= start && currentTime < end) {
+        return chunk;
+      }
+    }
+    
+    let closest = chunks[0] || [];
+    let minDiff = Infinity;
+    for (const chunk of chunks) {
+      const diff = Math.abs(chunk[0].start_time - currentTime);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = chunk;
+      }
+    }
+    return closest;
+  }, [chunks, currentTime, words.length]);
+
+  // Find active highlighted word within active chunk
+  const activeWord = words.find((w) => currentTime >= w.start_time && currentTime <= w.end_time);
 
   if (!isOpen || !clip) return null;
 
@@ -147,14 +219,6 @@ export const ClipEditorModal: React.FC<ClipEditorModalProps> = ({
       setIsExporting(false);
     }
   };
-
-  // Find active words for live subtitle overlay
-  const activeWord = words.find((w) => currentTime >= w.start_time && currentTime <= w.end_time);
-  const activeIndex = words.findIndex((w) => currentTime >= w.start_time && currentTime <= w.end_time);
-  
-  const activeChunk = activeIndex >= 0
-    ? words.slice(Math.max(0, activeIndex - 1), Math.min(words.length, activeIndex + 3))
-    : words.filter((w) => Math.abs(w.start_time - currentTime) < 1.2).slice(0, 3);
 
   const getPositionClass = () => {
     switch (position) {
@@ -216,6 +280,10 @@ export const ClipEditorModal: React.FC<ClipEditorModalProps> = ({
               <video
                 ref={videoRef}
                 src={clip.video_source_url}
+                onLoadedMetadata={(e) => {
+                  e.currentTarget.currentTime = clip.start_time;
+                  setCurrentTime(clip.start_time);
+                }}
                 onTimeUpdate={handleTimeUpdate}
                 onClick={togglePlay}
                 playsInline

@@ -256,7 +256,7 @@ def delete_video(
     return APIResponse(success=True, message="Video deleted successfully.")
 
 
-@router.get("/stream/{storage_key:path}")
+@router.api_route("/stream/{storage_key:path}", methods=["GET", "HEAD"])
 def stream_media(
     storage_key: str,
     request: Request,

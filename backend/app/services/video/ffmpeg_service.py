@@ -125,13 +125,15 @@ class FFmpegService:
             "-y",
             "-i", video_path,
             "-vn",                  # No video
-            "-acodec", "pcm_s16le",  # Uncompressed 16-bit PCM WAV
+            "-map", "0:a:0?",       # Select first audio stream if available
+            "-acodec", "pcm_s16le", # Uncompressed 16-bit PCM WAV
             "-ar", "16000",         # 16 kHz sample rate (optimal for Whisper)
             "-ac", "1",             # Mono audio
             output_audio_path,
         ]
         success, _, _ = self._run_command(cmd, timeout=300)
-        return success and os.path.exists(output_audio_path)
+        return success and os.path.exists(output_audio_path) and os.path.getsize(output_audio_path) > 0
+
 
     def extract_thumbnail(self, video_path: str, output_image_path: str, timestamp_sec: float = 1.0) -> bool:
         """

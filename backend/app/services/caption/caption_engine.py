@@ -13,7 +13,7 @@ except ImportError:
 
 def devanagari_to_hinglish(text: str) -> str:
     """Convert Hindi Devanagari characters into natural, readable Romanized Hinglish."""
-    if not HAS_TRANSLITERATION:
+    if not HAS_TRANSLITERATION or not text:
         return text
     try:
         res = transliterate(text, sanscript.DEVANAGARI, sanscript.ITRANS)
@@ -34,29 +34,29 @@ def devanagari_to_hinglish(text: str) -> str:
 
 PRESET_STYLES: Dict[str, Dict[str, Any]] = {
     "hormozi_yellow": {
-        "name": "Hormozi Viral (Hinglish / Hindi)",
+        "name": "Hormozi Viral",
         "description": "High-impact uppercase yellow and green karaoke highlighting on bold font",
-        "font_family": "Nirmala UI",
-        "font_size": 42,
+        "font_family": "Arial",
+        "font_size": 56,
         "primary_color": "#FFFFFF",      # Default text (White)
         "highlight_color": "#FACC15",    # Active word (Vibrant Gold/Yellow)
         "secondary_color": "#22C55E",    # Accent word (Electric Green)
         "stroke_color": "#000000",       # Outline (Black)
-        "stroke_width": 4,
+        "stroke_width": 5,
         "position": "bottom",            # top, center, bottom
         "uppercase": True,
         "words_per_group": 3,
     },
     "beast_bold": {
-        "name": "Beast Pop (Hinglish)",
-        "description": "Dynamic vibrant pop with bold blue outline and rapid single/double word flashes",
-        "font_family": "Nirmala UI",
-        "font_size": 46,
+        "name": "Beast Pop",
+        "description": "Dynamic vibrant pop with bold blue outline and rapid word flashes",
+        "font_family": "Arial",
+        "font_size": 60,
         "primary_color": "#FFFFFF",
         "highlight_color": "#38BDF8",    # Sky Blue
         "secondary_color": "#F43F5E",    # Rose Red
         "stroke_color": "#0F172A",
-        "stroke_width": 5,
+        "stroke_width": 6,
         "position": "center",
         "uppercase": True,
         "words_per_group": 2,
@@ -64,13 +64,13 @@ PRESET_STYLES: Dict[str, Dict[str, Any]] = {
     "neon_cyber": {
         "name": "Neon Cyber",
         "description": "Futuristic neon glowing aesthetic with cyan and magenta accents",
-        "font_family": "Nirmala UI",
-        "font_size": 40,
+        "font_family": "Segoe UI",
+        "font_size": 52,
         "primary_color": "#F8FAFC",
         "highlight_color": "#06B6D4",    # Cyan
         "secondary_color": "#D946EF",    # Magenta
         "stroke_color": "#020617",
-        "stroke_width": 3,
+        "stroke_width": 4,
         "position": "bottom",
         "uppercase": False,
         "words_per_group": 4,
@@ -78,16 +78,16 @@ PRESET_STYLES: Dict[str, Dict[str, Any]] = {
     "minimal_clean": {
         "name": "Clean Minimalist",
         "description": "Understated, modern corporate subtitle bar with high legibility",
-        "font_family": "Nirmala UI",
-        "font_size": 34,
+        "font_family": "Arial",
+        "font_size": 46,
         "primary_color": "#FFFFFF",
         "highlight_color": "#E2E8F0",
         "secondary_color": "#94A3B8",
         "stroke_color": "#000000",
-        "stroke_width": 2,
+        "stroke_width": 3,
         "position": "bottom",
         "uppercase": False,
-        "words_per_group": 5,
+        "words_per_group": 4,
     },
 }
 
@@ -135,31 +135,31 @@ class CaptionEngine:
         clip_start_offset: float = 0.0,
     ) -> str:
         """
-        Generate an Advanced SubStation Alpha (.ass) subtitle file with word-by-word active karaoke highlights.
-        Supports Hindi Devanagari and Romanized Hinglish formatting.
+        Generate an Advanced SubStation Alpha (.ass) subtitle file with continuous seamless word highlighting.
+        Prevents flickering and disappearing subtitles during inter-word pauses.
         """
         os.makedirs(os.path.dirname(os.path.abspath(output_file_path)), exist_ok=True)
 
         preset = style_override or self.get_preset("hormozi_yellow")
-        font_name = preset.get("font_family", "Nirmala UI")
-        font_size = preset.get("font_size", 42)
+        font_name = preset.get("font_family", "Arial")
+        font_size = preset.get("font_size", 56)
         primary_color_ass = hex_to_ass_color(preset.get("primary_color", "#FFFFFF"))
         highlight_color_ass = hex_to_ass_color(preset.get("highlight_color", "#FACC15"))
         outline_color_ass = hex_to_ass_color(preset.get("stroke_color", "#000000"))
-        outline_width = preset.get("stroke_width", 4)
+        outline_width = preset.get("stroke_width", 5)
         uppercase = preset.get("uppercase", True)
-        words_per_group = preset.get("words_per_group", 3)
+        words_per_group = max(1, preset.get("words_per_group", 3))
         position = preset.get("position", "bottom")
         use_hinglish = preset.get("use_hinglish", False)
 
         alignment = 2
-        margin_v = 180
+        margin_v = 220
         if position == "center":
             alignment = 5
             margin_v = 0
         elif position == "top":
             alignment = 8
-            margin_v = 220
+            margin_v = 240
 
         ass_header = f"""[Script Info]
 Title: ClipGenR AI Captions
@@ -172,8 +172,8 @@ PlayResY: 1920
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,{font_name},{font_size},{primary_color_ass},&H000000FF&,{outline_color_ass},&H80000000&,-1,0,0,0,100,100,1,0,1,{outline_width},0,{alignment},50,50,{margin_v},1
-Style: Highlight,{font_name},{font_size},{highlight_color_ass},&H000000FF&,{outline_color_ass},&H80000000&,-1,0,0,0,100,100,1,0,1,{outline_width},0,{alignment},50,50,{margin_v},1
+Style: Default,{font_name},{font_size},{primary_color_ass},&H000000FF&,{outline_color_ass},&H80000000&,-1,0,0,0,100,100,1,0,1,{outline_width},2,{alignment},60,60,{margin_v},1
+Style: Highlight,{font_name},{font_size},{highlight_color_ass},&H000000FF&,{outline_color_ass},&H80000000&,-1,0,0,0,100,100,1,0,1,{outline_width},2,{alignment},60,60,{margin_v},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -190,13 +190,42 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         for i in range(0, len(words), words_per_group):
             chunks.append(words[i : i + words_per_group])
 
-        for chunk in chunks:
+        for chunk_idx, chunk in enumerate(chunks):
             if not chunk:
                 continue
 
-            for active_idx, active_word in enumerate(chunk):
-                w_start = max(0.0, active_word["start_time"] - clip_start_offset)
-                w_end = max(w_start + 0.15, active_word["end_time"] - clip_start_offset)
+            # Determine continuous group display window
+            group_start = max(0.0, chunk[0]["start_time"] - clip_start_offset)
+            
+            # Group end is either the start of the next group or last word + 0.35s hold
+            if chunk_idx + 1 < len(chunks) and chunks[chunk_idx + 1]:
+                next_start = max(0.0, chunks[chunk_idx + 1][0]["start_time"] - clip_start_offset)
+                # If pause between groups is less than 0.8s, hold through to next group
+                if next_start - group_start < 4.0 and next_start > group_start:
+                    group_end = next_start
+                else:
+                    group_end = max(group_start + 0.5, chunk[-1]["end_time"] - clip_start_offset + 0.35)
+            else:
+                group_end = max(group_start + 0.5, chunk[-1]["end_time"] - clip_start_offset + 0.4)
+
+            # Generate progressive word-by-word highlights across the group display window
+            num_words = len(chunk)
+            for active_idx in range(num_words):
+                w_curr = chunk[active_idx]
+                w_start = max(0.0, w_curr["start_time"] - clip_start_offset)
+                
+                # If this is the first word in chunk and group_start is earlier, snap start to group_start
+                if active_idx == 0:
+                    w_start = min(w_start, group_start)
+
+                if active_idx + 1 < num_words:
+                    w_next = chunk[active_idx + 1]
+                    w_end = max(w_start + 0.1, w_next["start_time"] - clip_start_offset)
+                else:
+                    w_end = max(w_start + 0.2, group_end)
+
+                if w_end <= w_start:
+                    w_end = w_start + 0.2
 
                 start_str = format_ass_time(w_start)
                 end_str = format_ass_time(w_end)
@@ -206,7 +235,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                     raw_text = w["word"].strip()
                     if use_hinglish:
                         raw_text = devanagari_to_hinglish(raw_text)
-
                     if uppercase:
                         raw_text = raw_text.upper()
 
@@ -221,8 +249,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         with open(output_file_path, "w", encoding="utf-8") as f:
             f.write(ass_header + "\n".join(events) + "\n")
 
-        logger.info("Generated ASS subtitles", path=output_file_path, total_events=len(events))
+        logger.info("Generated seamless ASS subtitles", path=output_file_path, total_events=len(events))
         return output_file_path
 
 
 caption_engine = CaptionEngine()
+

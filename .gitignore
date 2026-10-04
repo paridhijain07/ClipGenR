@@ -24,6 +24,11 @@ storage_data/
 *.db
 *.sqlite
 *.sqlite3
+*.mp4
+*.wav
+*.m4a
+*.ass
+.cache/
 
 # Environment Variables & Secrets
 .env

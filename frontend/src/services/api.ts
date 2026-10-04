@@ -1,5 +1,6 @@
 import {
   CaptionPreset,
+  ClipCaption,
   ExportItem,
   GeneratedClip,
   ProcessingJob,
